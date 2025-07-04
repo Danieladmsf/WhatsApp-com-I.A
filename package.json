@@ -1,17 +1,25 @@
-
 {
-  "name": "whatsapp-api-bridge",
-  "version": "1.0.0",
-  "description": "Ponte entre WhatsApp e uma API externa para respostas com IA.",
-  "main": "script.js",
+  "name": "whatsapp-claude-bridge",
+  "version": "2.0.0",
+  "description": "Ponte escalável entre WhatsApp e Claude Code com rate limiting, monitoramento e logging estruturado",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node script.js"
+    "start": "node src/index.js",
+    "dev": "NODE_ENV=development LOG_LEVEL=debug node src/index.js",
+    "legacy": "node script.js",
+    "legacy-dev": "node start-all.js",
+    "legacy-api": "node api-server.js",
+    "legacy-claude": "node claude-bridge.js",
+    "legacy-auto": "node start-complete.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.43",
+    "@anthropic-ai/sdk": "^0.56.0",
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
+    "express": "^5.1.0",
     "firebase": "^11.9.1",
     "qrcode": "^1.5.3",
     "whatsapp-web.js": "^1.23.0"

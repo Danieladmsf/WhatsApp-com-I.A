@@ -1,14 +1,44 @@
-
-# Arquivo de credenciais locais. NUNCA envie para o Git.
-.env
-
-# Dependências do Node.js
+# Dependências
 node_modules/
-
-# Arquivos de autenticação do whatsapp-web.js
-.wwebjs_auth/
-
-# Arquivos de log e sistema
-*.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sessão WhatsApp (contém QR codes e auth)
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Variáveis de ambiente (credenciais sensíveis)
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Cache do sistema
+.cache/
+.tmp/
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operacional
 .DS_Store
+Thumbs.db
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Arquivos de backup
+*.bak
+*.backup

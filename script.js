@@ -6,7 +6,14 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const { initializeApp } = require('firebase/app');
 const { getFirestore, doc, setDoc, serverTimestamp, collection, query, where, onSnapshot, updateDoc } = require('firebase/firestore');
 const qrcode = require('qrcode');
-const axios = require('axios');
+
+// Função para importar o Claude Code SDK dinamicamente
+let claudeQuery;
+(async () => {
+    const { query } = await import('@anthropic-ai/claude-code');
+    claudeQuery = query;
+})();
+
 console.log('✅ Módulos importados.');
 
 
@@ -55,7 +62,16 @@ const client = new Client({
     authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
     puppeteer: {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+      executablePath: '/google/idx/builtins/bin/chromium-browser',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--single-process'
+      ],
     }
 });
 
@@ -158,46 +174,53 @@ client.on('message', async (message) => {
     const text = message.body;
     console.log(`[>>] Mensagem recebida de ${sender}: "${text}"`);
     
-    // Validação da API_ENDPOINT_URL
-    const API_ENDPOINT = process.env.API_ENDPOINT_URL;
-    if (!API_ENDPOINT) {
-        console.error('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-        console.error('!!! ERRO CRÍTICO: A variável API_ENDPOINT_URL não está configurada. !!!');
-        console.error('!!!                                                                      !!!');
-        console.error('!!! 1. Verifique se você criou o arquivo `.env` na pasta `whatsapp-bridge`. !!!');
-        console.error('!!! 2. Certifique-se de que a linha `API_ENDPOINT_URL=...` existe nele.    !!!');
-        console.error('!!! 3. O valor deve ser a URL completa da sua aplicação + `/api/whatsapp-chat`. !!!');
-        console.error('!!!                                                                      !!!');
-        console.error('!!! Siga as instruções no arquivo `whatsapp-bridge/README.md` atentamente. !!!');
-        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
-        client.sendMessage(sender, "Desculpe, o assistente de IA não está configurado corretamente pelo administrador (API_ENDPOINT_URL não encontrada).");
-        return;
-    }
-
     try {
-        console.log(`[API] Enviando para: ${API_ENDPOINT}`);
-        const response = await axios.post(API_ENDPOINT, {
-            senderId: sender.replace('@c.us', ''),
-            message: text,
+        console.log(`[Claude] Processando mensagem: "${text}"`);
+        
+        // Verificar se o Claude SDK está disponível
+        if (!claudeQuery) {
+            console.log('[Claude] SDK ainda não carregado, aguardando...');
+            await client.sendMessage(sender, "Aguarde um momento, estou inicializando...");
+            return;
+        }
+        
+        // Usar Claude Code SDK diretamente
+        const claudeResponse = claudeQuery({
+            prompt: text,
+            options: {
+                cwd: '/home/user/WHATSAPP'
+            }
         });
 
-        const replyText = response.data.reply;
-        if (replyText) {
-            console.log(`[API] Resposta da IA: "${replyText}"`);
-            client.sendMessage(sender, replyText);
+        let replyText = '';
+        console.log(`[Claude] Aguardando resposta...`);
+        
+        // Processar resposta streaming
+        for await (const chunk of claudeResponse) {
+            console.log(`[Claude] Chunk recebido:`, chunk);
+            if (chunk.type === 'result' && chunk.result) {
+                replyText = chunk.result;
+                break; // Usar apenas o resultado final
+            } else if (chunk.type === 'text') {
+                replyText += chunk.text;
+            } else if (chunk.content && typeof chunk.content === 'string') {
+                replyText += chunk.content;
+            } else if (typeof chunk === 'string') {
+                replyText += chunk;
+            }
+        }
+
+        if (replyText.trim()) {
+            console.log(`[Claude] Resposta: "${replyText}"`);
+            await client.sendMessage(sender, replyText);
         } else {
-            console.warn('[API] A API retornou uma resposta vazia.');
+            console.warn('[Claude] Claude retornou uma resposta vazia.');
+            await client.sendMessage(sender, "Desculpe, não consegui processar sua solicitação no momento.");
         }
 
     } catch (error) {
-        let errorMessage = "Ocorreu um erro desconhecido.";
-        if (axios.isAxiosError(error)) {
-            errorMessage = error.response?.data?.details || error.response?.data?.error || error.message;
-        } else if (error instanceof Error) {
-            errorMessage = error.message;
-        }
-        console.error('❌ ERRO AO CONTATAR A API:', errorMessage);
-        client.sendMessage(sender, `Desculpe, não consegui processar sua solicitação no momento. (Erro: ${errorMessage})`);
+        console.error('❌ ERRO AO PROCESSAR COM CLAUDE:', error.message);
+        await client.sendMessage(sender, `Desculpe, não consegui processar sua solicitação no momento. (Erro: ${error.message})`);
     }
 });
 
