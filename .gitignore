@@ -1,0 +1,14 @@
+
+# Arquivo de credenciais locais. NUNCA envie para o Git.
+.env
+
+# Dependências do Node.js
+node_modules/
+
+# Arquivos de autenticação do whatsapp-web.js
+.wwebjs_auth/
+
+# Arquivos de log e sistema
+*.log
+npm-debug.log*
+.DS_Store
