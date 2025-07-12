@@ -1,0 +1,36 @@
+  🎯 Arquivos Principais de Input do Claude Code:
+
+  1. SDK Principal
+
+  /home/user/.global_modules/lib/node_modules/@anthropic-ai/claude-code/sdk.mjs
+  Responsável por:
+  - ✅ Linha 9: import { createInterface } from "readline"
+  - ✅ Linha 152: Processamento de prompts (--print)
+  - ✅ Linha 250: Interface readline para output
+  - ✅ Linhas 306-314: Função streamToStdin() - ESTE É O PRINCIPAL!
+
+  2. CLI Executável
+
+  /home/user/.global_modules/lib/node_modules/@anthropic-ai/claude-code/cli.js
+  Responsável por:
+  - ✅ Parsing de argumentos de linha de comando
+  - ✅ Processamento de eventos de input
+  - ✅ Shell command parsing
+
+  3. Ponto de Entrada
+
+  /home/user/.global_modules/bin/claude
+  Responsável por:
+  - ✅ Script principal que inicia tudo
+
+  🔑 Arquivo CHAVE para Input de Terminal:
+
+  sdk.mjs - Função streamToStdin() (linhas 306-314)
+
+  Esta função é responsável por:
+  - ✅ Capturar mensagens do terminal
+  - ✅ Converter para JSON
+  - ✅ Enviar via stdin para o processo principal
+  - ✅ Gerenciar comunicação bidirecional
+
+  Este é o coração da captura de input do Claude Code! 🎯
